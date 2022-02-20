@@ -8,7 +8,7 @@ import model as mn
 import numpy as np
 import argparse
 from vocab import Vocab
-
+from pprint import pprint
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument("--dev_output", type=str, default="output.dev.txt")  # output for dev
     parser.add_argument("--test_output", type=str, default="output.test.txt")  # output for dev
     args = parser.parse_args()
-    print(f"RUN: {vars(args)}")
+    pprint(f"RUN: {vars(args)}")
     return args
 
 def read_dataset(filename):
@@ -79,7 +79,19 @@ def pad_sentences(sents, pad_id):
     Return:
         aug_sents: list(list(int)), |s_1| == |s_i|, for s_i in sents
     """
-    raise NotImplementedError()
+
+    padded_sent = []
+    max_len = max([len(i) for i in sents])
+    for sent in sents:
+        if len(sent) < max_len:
+            new_sent = sent + [pad_id]*(max_len - len(sent))
+            padded_sent.append(new_sent)
+        else:
+            padded_sent.append(sent)
+
+    return padded_sent
+
+    # raise NotImplementedError()
 
 def compute_grad_norm(model, norm_type=2):
     """

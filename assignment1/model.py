@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import zipfile
 import numpy as np
 
@@ -39,7 +40,24 @@ def load_embedding(vocab, emb_file, emb_size):
     Return:
         emb: (np.array), embedding matrix of size (|vocab|, emb_size) 
     """
-    raise NotImplementedError()
+    print("Loading the embedding file")
+    emb_model = {}
+    with open(emb_file, 'r') as f:
+        for line in f:
+            split_line = line.split()
+            word = split_line[0]
+            embedding = np.array(split_line[1:], dtype=np.float32)
+            emb_model[word] = embedding
+
+    assert len(embedding) == emb_size
+
+    emb_matrix = []
+    for word in vocab:
+        emb_matrix.append(emb_model.get(word))
+    return np.array(emb_matrix)
+
+
+    # raise NotImplementedError()
 
 
 class DanModel(BaseModel):
@@ -52,23 +70,46 @@ class DanModel(BaseModel):
         if args.emb_file is not None:
             self.copy_embedding_from_numpy()
 
-    def define_model_parameters():
+    def define_model_parameters(self):
         """
         Define the model's parameters, e.g., embedding layer, feedforward layer.
         """
-        raise NotImplementedError()
+        self.embed = nn.Embedding(len(self.vocab), self.args.emb_size)
+        # self.emb_drop = nn.Dropout(self.args.emb_drop)
+        # self.emb_bn = nn.BatchNorm1d(self.args.emb_size)
+
+        fully_connected_layers = []
+        for i in range(self.args.hid_layer):
+            if i == 0:
+                fully_connected_layers.append(nn.Linear(self.args.emb_size, self.args.hid_size))
+                fully_connected_layers.append(nn.Dropout(self.args.hid_drop))
+                # fully_connected_layers.append(nn.BatchNorm1d(self.args.hid_size))
+            elif i == self.args.hid_layer - 1:
+                fully_connected_layers.append(nn.Linear(self.args.hid_size, self.tag_size))
+            else:
+                fully_connected_layers.append(nn.Linear(self.args.hid_size, self.args.hid_size))
+                fully_connected_layers.append(nn.Dropout(self.args.hid_drop))
+                fully_connected_layers.append(nn.BatchNorm1d(self.args.hid_size))
+
+        self.fc = nn.ModuleList(fully_connected_layers)
+
+        # raise NotImplementedError()
 
     def init_model_parameters(self):
         """
         Initialize the model's parameters by uniform sampling from a range [-v, v], e.g., v=0.08
         """
-        raise NotImplementedError()
+        for layer in self.fc:
+            if isinstance(layer, nn.Linear):
+                nn.init.uniform_(layer.weight, -0.08, 0.08)
+        # raise NotImplementedError()
 
-    def copy_embedding_from_numpy():
+    def copy_embedding_from_numpy(self):
         """
         Load pre-trained word embeddings from numpy.array to nn.embedding
         """
-        raise NotImplementedError()
+        pass
+        # raise NotImplementedError()
 
     def forward(self, x):
         """
@@ -81,4 +122,18 @@ class DanModel(BaseModel):
         Return:
             scores: (torch.FloatTensor), [batch_size, ntags]
         """
-        raise NotImplementedError()
+
+        X = self.embed(x)
+        X = X.mean(dim=1)
+
+        # X = self.emb_drop(X)
+        # X = self.emb_bn(X)
+
+        for layer in self.fc:
+            if isinstance(layer, nn.Linear):
+                X = F.relu(layer(X))
+            else:
+                X = layer(X)
+        return X
+
+        # raise NotImplementedError()
