@@ -106,7 +106,7 @@ class DanModel(BaseModel):
         """
         emb = load_embedding(self.vocab, self.args.emb_file, self.args.emb_size)
         self.embed.weight = torch.nn.Parameter(torch.from_numpy(emb))
-        self.embed.weight.requires_grad = False
+        self.embed.weight.requires_grad = True
         # raise NotImplementedError()
 
     def forward(self, x):

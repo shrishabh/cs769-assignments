@@ -9,24 +9,25 @@ import numpy as np
 import argparse
 from vocab import Vocab
 from pprint import pprint
+import IPython
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", type=str, default="data/cfimdb-train.txt")
-    parser.add_argument("--dev", type=str, default="data/cfimdb-dev.txt")
-    parser.add_argument("--test", type=str, default="data/cfimdb-test.txt")
-    parser.add_argument("--emb_file", type=str, default='embedding_glove_42b.npy')
+    parser.add_argument("--train", type=str, default="data/sst-train.txt")
+    parser.add_argument("--dev", type=str, default="data/sst-dev.txt")
+    parser.add_argument("--test", type=str, default="data/sst-test.txt")
+    parser.add_argument("--emb_file", type=str, default='embedding_glove_42b_tuned.npy')
     parser.add_argument("--emb_size", type=int, default=300)
     parser.add_argument("--hid_size", type=int, default=300)
-    parser.add_argument("--hid_layer", type=int, default=3)
+    parser.add_argument("--hid_layer", type=int, default=5)
     parser.add_argument("--word_drop", type=float, default=0.3)
     parser.add_argument("--emb_drop", type=float, default=0.333)
-    parser.add_argument("--hid_drop", type=float, default=0.333)
+    parser.add_argument("--hid_drop", type=float, default=0.3)
     parser.add_argument("--pooling_method", type=str, default="avg", choices=["sum", "avg", "max"])
     parser.add_argument("--grad_clip", type=float, default=5.0)
     parser.add_argument("--max_train_epoch", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--lrate", type=float, default=0.001)
+    parser.add_argument("--lrate", type=float, default=0.002)
     parser.add_argument("--lrate_decay", type=float, default=0)  # 0 means no decay!
     parser.add_argument("--mrate", type=float, default=0.85)
     parser.add_argument("--log_niter", type=int, default=100)
@@ -215,8 +216,20 @@ def main():
                     best_records = (train_iter, dev_accuracy)
                     model.save(args.model)
 
+    
     # Load the best model
     model.load(args.model)
+    
+    new_emb_path = args.emb_file.replace('.npy','_updated.npy')
+    
+    weights = model.embed.weight.cpu().detach().numpy()
+    emb_model = np.load(args.emb_file ,allow_pickle=True).item()
+
+    for k, v in word_vocab.id2word.items():
+        emb_model[v] = weights[k]
+    
+    np.save(new_emb_path,emb_model)
+    
     evaluate(test_data, model, device, tag_vocab, filename=args.test_output)
     evaluate(dev_data, model, device, tag_vocab, filename=args.dev_output)
 
