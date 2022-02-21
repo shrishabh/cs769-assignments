@@ -12,10 +12,10 @@ from pprint import pprint
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", type=str, default="data/sst-train.txt")
-    parser.add_argument("--dev", type=str, default="data/sst-dev.txt")
-    parser.add_argument("--test", type=str, default="data/sst-test.txt")
-    parser.add_argument("--emb_file", type=str, default='embedding_fasttext.npy')
+    parser.add_argument("--train", type=str, default="data/cfimdb-train.txt")
+    parser.add_argument("--dev", type=str, default="data/cfimdb-dev.txt")
+    parser.add_argument("--test", type=str, default="data/cfimdb-test.txt")
+    parser.add_argument("--emb_file", type=str, default='embedding_glove_42b.npy')
     parser.add_argument("--emb_size", type=int, default=300)
     parser.add_argument("--hid_size", type=int, default=300)
     parser.add_argument("--hid_layer", type=int, default=3)
@@ -24,9 +24,9 @@ def get_args():
     parser.add_argument("--hid_drop", type=float, default=0.333)
     parser.add_argument("--pooling_method", type=str, default="avg", choices=["sum", "avg", "max"])
     parser.add_argument("--grad_clip", type=float, default=5.0)
-    parser.add_argument("--max_train_epoch", type=int, default=5)
+    parser.add_argument("--max_train_epoch", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--lrate", type=float, default=0.005)
+    parser.add_argument("--lrate", type=float, default=0.001)
     parser.add_argument("--lrate_decay", type=float, default=0)  # 0 means no decay!
     parser.add_argument("--mrate", type=float, default=0.85)
     parser.add_argument("--log_niter", type=int, default=100)

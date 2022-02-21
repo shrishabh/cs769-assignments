@@ -48,7 +48,7 @@ def load_embedding(vocab, emb_file, emb_size):
         if emb_model.get(word) is not None:
             emb_matrix.append(emb_model.get(word))
         else:
-            x = np.random.random(emb_size)
+            emb_matrix.append(np.random.random(emb_size))
             
     return np.array(emb_matrix)
 
@@ -85,7 +85,7 @@ class DanModel(BaseModel):
             else:
                 fully_connected_layers.append(nn.Linear(self.args.hid_size, self.args.hid_size))
                 fully_connected_layers.append(nn.Dropout(self.args.hid_drop))
-                fully_connected_layers.append(nn.BatchNorm1d(self.args.hid_size))
+                #fully_connected_layers.append(nn.BatchNorm1d(self.args.hid_size))
 
         self.fc = nn.ModuleList(fully_connected_layers)
 
@@ -104,7 +104,9 @@ class DanModel(BaseModel):
         """
         Load pre-trained word embeddings from numpy.array to nn.embedding
         """
-        self.embed = nn.Embedding.from_pretrained(load_embedding(self.vocab, self.args.emb_file, self.args.emb_size), freeze=False)
+        emb = load_embedding(self.vocab, self.args.emb_file, self.args.emb_size)
+        self.embed.weight = torch.nn.Parameter(torch.from_numpy(emb))
+        self.embed.weight.requires_grad = False
         # raise NotImplementedError()
 
     def forward(self, x):
