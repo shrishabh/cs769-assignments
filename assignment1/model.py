@@ -40,20 +40,16 @@ def load_embedding(vocab, emb_file, emb_size):
     Return:
         emb: (np.array), embedding matrix of size (|vocab|, emb_size) 
     """
-    print("Loading the embedding file")
-    emb_model = {}
-    with open(emb_file, 'r') as f:
-        for line in f:
-            split_line = line.split()
-            word = split_line[0]
-            embedding = np.array(split_line[1:], dtype=np.float32)
-            emb_model[word] = embedding
-
-    assert len(embedding) == emb_size
-
+    
+    emb_model = np.load(emb_file ,allow_pickle=True).item()
+    
     emb_matrix = []
-    for word in vocab:
-        emb_matrix.append(emb_model.get(word))
+    for word in vocab.word2id.keys():
+        if emb_model.get(word) is not None:
+            emb_matrix.append(emb_model.get(word))
+        else:
+            x = np.random.random(emb_size)
+            
     return np.array(emb_matrix)
 
 
@@ -108,7 +104,7 @@ class DanModel(BaseModel):
         """
         Load pre-trained word embeddings from numpy.array to nn.embedding
         """
-        pass
+        self.embed = nn.Embedding.from_pretrained(load_embedding(self.vocab, self.args.emb_file, self.args.emb_size), freeze=False)
         # raise NotImplementedError()
 
     def forward(self, x):
