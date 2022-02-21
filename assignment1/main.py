@@ -9,7 +9,7 @@ import numpy as np
 import argparse
 from vocab import Vocab
 from pprint import pprint
-import IPython
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -219,16 +219,6 @@ def main():
     
     # Load the best model
     model.load(args.model)
-    
-    new_emb_path = args.emb_file.replace('.npy','_updated.npy')
-    
-    weights = model.embed.weight.cpu().detach().numpy()
-    emb_model = np.load(args.emb_file ,allow_pickle=True).item()
-
-    for k, v in word_vocab.id2word.items():
-        emb_model[v] = weights[k]
-    
-    np.save(new_emb_path,emb_model)
     
     evaluate(test_data, model, device, tag_vocab, filename=args.test_output)
     evaluate(dev_data, model, device, tag_vocab, filename=args.dev_output)
