@@ -20,7 +20,7 @@ class BertSelfAttention(nn.Module):
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
-        # this attention is applied after calculating the attention score following the original implementation of transformer
+        # this attention is applied after calculating the attention score following the original implementation of transformer,
         # although it is a bit unusual, we empirically observe that it yields better performance
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
@@ -43,21 +43,27 @@ class BertSelfAttention(nn.Module):
         # before normalizing the scores, use the attention mask to mask out the padding token scores
         # Note again: in the attention_mask non-padding tokens with 0 and padding tokens with a large negative number
 
-        scores = torch.matmul(query, key.transpose(-1, -2))/(math.sqrt(key.shape[-1]))
+        norm = (math.sqrt(key.shape[-1]))
+
+        scores = torch.matmul(query, key.transpose(-1, -2))
         bs = scores.shape[0]
         s_len = scores.shape[-1]
 
-
-        scores.masked_fill_(attention_mask, -1e9)
+        # scores = scores*attention_mask
+        # scores.masked_fill_(attention_mask, -1e9)
+        scores = scores / norm
+        scores_n = scores + attention_mask
 
         # normalize the scores
-        attention = nn.Softmax(dim=-1)(scores)
+
+        attention = nn.Softmax(dim=-1)(scores_n)
 
         # multiply the attention scores to the value and get back V'
         v_prime = torch.matmul(attention, value)
 
         # next, we need to concat multi-heads and recover the original shape [bs, seq_len, num_attention_heads * attention_head_size = hidden_size]
-        v_prime = v_prime.view(bs, s_len, self.all_head_size)
+        v_prime = v_prime.permute(0, 2, 1, 3)
+        v_prime = v_prime.contiguous().view(bs, s_len, self.all_head_size)
         return v_prime
 
         # raise NotImplementedError
@@ -106,6 +112,7 @@ class BertLayer(nn.Module):
         out = dropout(out)
         out = out + input
         out = ln_layer(out)
+
         return out
 
         # todo
@@ -175,7 +182,7 @@ class BertModel(BertPreTrainedModel):
         seq_length = input_shape[1]
 
         # get word embedding from self.word_embedding
-        # todo
+
         inputs_embeds = self.word_embedding(input_ids)
 
         # get position index and position embedding from self.pos_embedding
