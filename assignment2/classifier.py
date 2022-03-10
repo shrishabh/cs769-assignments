@@ -12,8 +12,9 @@ from bert import BertModel
 from optimizer import AdamW
 from tqdm import tqdm
 
+TQDM_DISABLE = True
 
-TQDM_DISABLE=True
+
 # fix the random seed
 def seed_everything(seed=11711):
     random.seed(seed)
@@ -23,6 +24,7 @@ def seed_everything(seed=11711):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
 
 class BertSentClassifier(torch.nn.Module):
     def __init__(self, config):
@@ -44,6 +46,7 @@ class BertSentClassifier(torch.nn.Module):
         # todo
         # the final bert contextualize embedding is the hidden state of [CLS] token (the first token)
         raise NotImplementedError
+
 
 # create a custom Dataset Class to be used for the dataloader
 class BertDataset(Dataset):
@@ -114,9 +117,10 @@ def create_data(filename, flag='train'):
     else:
         return data
 
+
 # perform model evaluation in terms of the accuracy and f1 score.
 def model_eval(dataloader, model, device):
-    model.eval() # switch to eval model, will turn off randomness like dropout
+    model.eval()  # switch to eval model, will turn off randomness like dropout
     y_true = []
     y_pred = []
     sents = []
@@ -141,6 +145,7 @@ def model_eval(dataloader, model, device):
 
     return acc, f1, y_pred, y_true, sents
 
+
 def save_model(model, optimizer, args, config, filepath):
     save_info = {
         'model': model.state_dict(),
@@ -154,6 +159,7 @@ def save_model(model, optimizer, args, config, filepath):
 
     torch.save(save_info, filepath)
     print(f"save the model to {filepath}")
+
 
 def train(args):
     device = torch.device('cuda') if args.use_gpu else torch.device('cpu')
@@ -220,7 +226,8 @@ def train(args):
             best_dev_acc = dev_acc
             save_model(model, optimizer, args, config, args.filepath)
 
-        print(f"epoch {epoch}: train loss :: {train_loss :.3f}, train acc :: {train_acc :.3f}, dev acc :: {dev_acc :.3f}")
+        print(
+            f"epoch {epoch}: train loss :: {train_loss :.3f}, train acc :: {train_acc :.3f}, dev acc :: {dev_acc :.3f}")
 
 
 def test(args):
@@ -234,11 +241,13 @@ def test(args):
         print(f"load model from {args.filepath}")
         dev_data = create_data(args.dev, 'valid')
         dev_dataset = BertDataset(dev_data, args)
-        dev_dataloader = DataLoader(dev_dataset, shuffle=False, batch_size=args.batch_size, collate_fn=dev_dataset.collate_fn)
+        dev_dataloader = DataLoader(dev_dataset, shuffle=False, batch_size=args.batch_size,
+                                    collate_fn=dev_dataset.collate_fn)
 
         test_data = create_data(args.test, 'test')
         test_dataset = BertDataset(test_data, args)
-        test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=args.batch_size, collate_fn=test_dataset.collate_fn)
+        test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=args.batch_size,
+                                     collate_fn=test_dataset.collate_fn)
 
         dev_acc, dev_f1, dev_pred, dev_true, dev_sents = model_eval(dev_dataloader, model, device)
         test_acc, test_f1, test_pred, test_true, test_sents = model_eval(test_dataloader, model, device)
@@ -278,9 +287,10 @@ def get_args():
     print(f"args: {vars(args)}")
     return args
 
+
 if __name__ == "__main__":
     args = get_args()
-    args.filepath = f'{args.option}-{args.epochs}-{args.lr}.pt' # save path
+    args.filepath = f'{args.option}-{args.epochs}-{args.lr}.pt'  # save path
     seed_everything(args.seed)  # fix the seed for reproducibility
     train(args)
     test(args)
