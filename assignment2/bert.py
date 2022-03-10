@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional, Union, Tuple, Callable
 import math
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -44,7 +43,7 @@ class BertSelfAttention(nn.Module):
         # before normalizing the scores, use the attention mask to mask out the padding token scores
         # Note again: in the attention_mask non-padding tokens with 0 and padding tokens with a large negative number
 
-        scores = torch.matmul(query, key.transpose(-1, -2))/np.sqrt(key.shape[-1])
+        scores = torch.matmul(query, key.transpose(-1, -2))/(math.sqrt(key.shape[-1]))
         bs = scores.shape[0]
         s_len = scores.shape[-1]
 
@@ -194,11 +193,11 @@ class BertModel(BertPreTrainedModel):
         embeds = self.embed_layer_norm(embeds)
         embeds = self.embed_dropout(embeds)
 
-        for layer in self.bert_layers:
-            emebds = layer(embeds)
-
-        embeds = self.pooler_dense(embeds)
-        embeds = self.pooler_af(embeds)
+        # for layer in self.bert_layers:
+        #     emebds = layer(embeds)
+        #
+        # embeds = self.pooler_dense(embeds)
+        # embeds = self.pooler_af(embeds)
 
         return embeds
 
