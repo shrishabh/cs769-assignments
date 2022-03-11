@@ -31,7 +31,7 @@ class AdamW(Optimizer):
             loss = closure()
 
         for group in self.param_groups:
-            for p in group["params"]:
+            for idx, p in enumerate(group["params"]):
                 if p.grad is None:
                     continue
                 grad = p.grad.data
@@ -44,9 +44,10 @@ class AdamW(Optimizer):
                 state = self.state[p]
                 if len(state) == 0:
                     state['t'] = 0
-                    state['m_zero'] = torch.zeros(group['params'][0].size())
-                    state['v_zero'] = torch.zeros(group['params'][0].size())
-
+                    state['m_zero'] = torch.zeros(group['params'][idx].size())
+                    state['v_zero'] = torch.zeros(group['params'][idx].size())
+                    # state['m_zero'] = torch.zeros(grad.size())
+                    # state['v_zero'] = torch.zeros(grad.size())
                 t = state['t'] + 1
                 state['t'] = t
                 m_zero = state['m_zero']
@@ -82,10 +83,10 @@ class AdamW(Optimizer):
 
                 # Update parameters
                 update = alpha*m_hat/(torch.sqrt(v_hat) + epsilon)
-                group['params'][0].data = group['params'][0] - update
+                group['params'][idx].data = group['params'][idx] - update
 
                 # Add weight decay after the main gradient-based updates.
                 # Please note that the learning rate should be incorporated into this update.
-                group['params'][0].data = group['params'][0].data - alpha*weight_decay*group['params'][0].data
+                group['params'][idx].data = group['params'][idx].data - alpha*weight_decay*group['params'][idx].data
 
         return loss
