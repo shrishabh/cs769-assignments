@@ -1,3 +1,4 @@
+import math
 from typing import Callable, Iterable, Tuple
 
 import torch
@@ -37,23 +38,54 @@ class AdamW(Optimizer):
                 if grad.is_sparse:
                     raise RuntimeError("Adam does not support sparse gradients, please consider SparseAdam instead")
 
-                raise NotImplementedError()
+                # raise NotImplementedError()
 
                 # State should be stored in this dictionary
                 state = self.state[p]
+                if len(state) == 0:
+                    state['t'] = 0
+                    state['m_zero'] = torch.zeros(group['params'][0].size())
+                    state['v_zero'] = torch.zeros(group['params'][0].size())
+
+                t = state['t'] + 1
+                state['t'] = t
+                m_zero = state['m_zero']
+                v_zero = state['v_zero']
+
 
                 # Access hyperparameters from the `group` dictionary
                 alpha = group["lr"]
+                beta1, beta2 = group['betas']
+                epsilon = group['eps']
+                weight_decay = group['weight_decay']
+                correct_bias = group['correct_bias']
 
                 # Update first and second moments of the gradients
+                m_zero = beta1*state['m_zero'] + (1-beta1)*grad
+                v_zero = beta2*state['v_zero'] + (1-beta2)*grad*grad
+
+                state['m_zero'] = m_zero
+                state['v_zero'] = v_zero
+
+                # state['m_zero'].mul_(beta1).addcmul_(grad, value=1.0-beta1)
+                # state['v_zero'].mul_(beta2).addcmul_(grad, grad, value=1.0-beta2)
 
                 # Bias correction
                 # Please note that we are using the "efficient version" given in
                 # https://arxiv.org/abs/1412.6980
+                if correct_bias:
+                    m_hat = state['m_zero']/(1-(beta1)**t)
+                    v_hat = state['v_zero']/(1-(beta2)**t)
+                else:
+                    m_hat = state['m_zero']
+                    v_hat = state['v_zero']
 
                 # Update parameters
+                update = alpha*m_hat/(torch.sqrt(v_hat) + epsilon)
+                group['params'][0].data = group['params'][0] - update
 
                 # Add weight decay after the main gradient-based updates.
                 # Please note that the learning rate should be incorporated into this update.
+                group['params'][0].data = group['params'][0].data - alpha*weight_decay*group['params'][0].data
 
         return loss
