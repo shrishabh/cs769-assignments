@@ -40,9 +40,12 @@ class BertSentClassifier(torch.nn.Module):
                 param.requires_grad = True
 
         self.bert_em_size = config.hidden_size
-
+        self.additional_linear_layer_size = 256
         self.bert_dropout = torch.nn.Dropout(config.hidden_dropout_prob)
-        self.linear = torch.nn.Linear(self.bert_em_size, self.num_labels)
+        self.linear1 = torch.nn.Linear(self.bert_em_size, self.additional_linear_layer_size)
+        self.linear1_af = F.relu
+
+        self.linear2 = torch.nn.Linear(self.additional_linear_layer_size, self.num_labels)
 
         # raise NotImplementedError
 
@@ -52,7 +55,9 @@ class BertSentClassifier(torch.nn.Module):
         outputs = self.bert(input_ids, attention_mask)
         pooled_out = outputs['pooler_output']
         out = self.bert_dropout(pooled_out)
-        out = self.linear(out)
+        out = self.linear1(out)
+        out = self.linear1_af(out)
+        out = self.linear2(out)
         out = torch.nn.Softmax(dim=-1)(out)
 
         return out
@@ -196,7 +201,7 @@ def train(args):
 
     config = SimpleNamespace(**config)
 
-    # initialize the Senetence Classification Model
+    # initialize the Sentence Classification Model
     model = BertSentClassifier(config)
     model = model.to(device)
 
